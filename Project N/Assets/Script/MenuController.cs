@@ -1,18 +1,36 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
+using UnityEngine.SceneManagement;
 
 public class MenuController : MonoBehaviour
 {
-    // Start is called before the first frame update
-    void Start()
+    [Header("Saved To Load")]
+    public string _newGame;
+    private string savedToLoad;
+    [SerializeField] private GameObject noSavedGameDialog = null;
+
+    public void NewGameDialogYes()
     {
-        
+        SceneManager.LoadScene(_newGame);
     }
 
-    // Update is called once per frame
-    void Update()
+    public void LoadGameDialogYes()
     {
-        
+        if (PlayerPrefs.HasKey("SavedGame"))
+        {
+            savedToLoad = PlayerPrefs.GetString("SavedGame");
+            SceneManager.LoadScene(savedToLoad);
+        }
+        else
+        {
+            noSavedGameDialog.SetActive(true);
+        }
+    }
+
+    public void QuitButton()
+    {
+        Application.Quit();
     }
 }
