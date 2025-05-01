@@ -1,4 +1,4 @@
-using System.Collections;
+﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -20,8 +20,8 @@ public class PlayerMovement : MonoBehaviour
     public AudioSource audioSource;
     public AudioClip walkClip;
     public AudioClip runClip;
-    public AudioClip jumpClip;
-    public AudioClip landClip; // ���§���ⴴŧ���
+    public AudioClip landClip;
+    public AudioClip jumpClip;  // เพิ่มเสียงกระโดด
     public float stepInterval = 0.5f;
 
     private CharacterController controller;
@@ -30,6 +30,11 @@ public class PlayerMovement : MonoBehaviour
     private bool isCrouching;
 
     private float nextStepTime = 0f;
+    private bool wasInAir = false;
+    private bool isJumping = false;
+
+    // สถานะเสียงกระโดด
+    private bool hasPlayedJumpSound = false;
 
     void Start()
     {
@@ -39,16 +44,31 @@ public class PlayerMovement : MonoBehaviour
 
     void Update()
     {
-        isGrounded = controller.isGrounded;
+        bool groundedNow = controller.isGrounded;
+
+        // ตรวจจับการลอย/ลงพื้น
+        if (!wasInAir && !groundedNow)
+        {
+            wasInAir = true;
+            isJumping = true;  // เริ่มการกระโดด
+        }
+        else if (wasInAir && groundedNow)
+        {
+            // เมื่อแตะพื้นแล้ว
+            if (landClip && audioSource)
+            {
+                audioSource.PlayOneShot(landClip);  // เล่นเสียงตกกระทบ
+            }
+            wasInAir = false;
+            isJumping = false;  // สิ้นสุดการกระโดด
+            hasPlayedJumpSound = false;  // รีเซ็ตสถานะเสียงกระโดด
+        }
+
+        isGrounded = groundedNow;
+
         if (isGrounded && velocity.y < 0)
         {
-            velocity.y = -2f;
-
-            // ������§���ⴴ����Ͷ֧���
-            if (landClip && audioSource && !audioSource.isPlaying)
-            {
-                audioSource.PlayOneShot(landClip);
-            }
+            velocity.y = -2f;  // ลดความเร็วในการตก
         }
 
         float moveX = Input.GetAxis("Horizontal");
@@ -56,11 +76,12 @@ public class PlayerMovement : MonoBehaviour
 
         Vector3 move = transform.right * moveX + transform.forward * moveZ;
 
-        // Determine current speed
+        // Determine speed
         float speed = walkSpeed;
 
         if (Input.GetKey(KeyCode.LeftShift) && !isCrouching)
             speed = runSpeed;
+
         if (Input.GetKey(KeyCode.LeftControl))
         {
             isCrouching = true;
@@ -79,10 +100,14 @@ public class PlayerMovement : MonoBehaviour
         if (Input.GetButtonDown("Jump") && isGrounded && !isCrouching)
         {
             velocity.y = Mathf.Sqrt(jumpHeight * -2f * gravity);
+            wasInAir = true;
 
-            // ������§���ⴴ
-            if (jumpClip && audioSource)
-                audioSource.PlayOneShot(jumpClip);
+            // เล่นเสียงกระโดดเมื่อกระโดด
+            if (jumpClip && audioSource && !hasPlayedJumpSound)
+            {
+                audioSource.PlayOneShot(jumpClip);  // เสียงกระโดด
+                hasPlayedJumpSound = true;  // ตั้งค่าสถานะเสียงกระโดด
+            }
         }
 
         // Gravity
@@ -100,7 +125,6 @@ public class PlayerMovement : MonoBehaviour
         }
         else
         {
-            // ��ش���§��������������Թ���������ҧ�ҡ��
             if (audioSource.isPlaying && (audioSource.clip == walkClip || audioSource.clip == runClip))
             {
                 audioSource.Stop();
