@@ -4,43 +4,23 @@ using UnityEngine;
 
 public class NetProjectile : MonoBehaviour
 {
-    private Vector3 moveDirection;
-    private float speed;
-    private float lifetime;
-    private float timer;
+    public float lifeTime = 5f;
 
-    public void Initialize(Vector3 direction, float speed, float lifetime)
+    void Start()
     {
-        this.moveDirection = direction.normalized;
-        this.speed = speed;
-        this.lifetime = lifetime;
-        timer = 0f;
-    }
-
-    void Update()
-    {
-        transform.position += moveDirection * speed * Time.deltaTime;
-
-        timer += Time.deltaTime;
-        if (timer >= lifetime)
-        {
-            Destroy(gameObject);
-        }
+        Destroy(gameObject, lifeTime);
     }
 
     void OnTriggerEnter(Collider other)
     {
-        if (other.CompareTag("Enemy"))
+        if (other.CompareTag("Prisoner"))
         {
-            Debug.Log("Hit enemy!");
-
-            Animator anim = other.GetComponent<Animator>();
-            if (anim != null)
+            EnemyController3D enemy = other.GetComponent<EnemyController3D>();
+            if (enemy != null)
             {
-                anim.SetTrigger("Fall");
+                enemy.Trap();
+                Destroy(gameObject);
             }
-
-            Destroy(gameObject); // ทำลาย Net เมื่อโดน
         }
     }
 }
